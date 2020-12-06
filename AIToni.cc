@@ -18,12 +18,11 @@ struct PLAYER_NAME : public Player {
     return new PLAYER_NAME;
   }
 
-
   bool can_move(Pos a) {
-    if  (cell(a).type == Street) return true;
+    if  (pos_ok(a) && cell(a).type == Street) return true;
     else return false;
   
-  }
+  }  
 
   bool win(int yo, int rival) {
     Citizen champ = citizen(yo);
@@ -37,6 +36,39 @@ struct PLAYER_NAME : public Player {
 
   }
 
+  Dir give_direction(Pos a, Pos b) {
+      if (a.i < b.i) return Down;
+      if (a.i > b.i) return Up;
+      if (a.j > b.j) return Left;
+      else return Right;
+
+
+  }
+  void follow_path(int id, stack<Pos> path) {
+    path.pop();
+    cerr << "El camino hasta el existo es de: " << endl;
+    if (!path.empty()) { 
+      cerr << "me muevo de " << citizen(id).pos << " a " << path.top() << endl;
+      Dir d = give_direction(citizen(id).pos, path.top());
+      move(id, d);
+      path.pop();
+      
+    }
+  }
+
+  void create_path(int id, Pos end, vector<vector<Pos>> m_path) {
+    stack<Pos> path;
+    Pos p = end;
+    while (p != Pos(-1,-1))
+    {
+      path.push(p);
+      p = m_path[p.i][p.j];
+    }
+    follow_path(id, path);
+    
+
+  }
+
   int bfs(int id, Pos s) {
     int dist = -1;
     queue<Pos> positions; 
@@ -46,21 +78,23 @@ struct PLAYER_NAME : public Player {
     distance.push(0); 
 
     vector<vector<char>> visited(board_rows(), vector<char>(board_cols(), '0'));
+    vector<vector<Pos>> path(board_rows(), vector<Pos>(board_cols(), Pos(-1, -1)));
     visited[s.i][s.j] = '1'; 
 
     bool found = false;
     while (!found && !positions.empty()) {
       int next_dist = distance.front()+1;
-      Pos actual = positions.front();      
+      Pos actual = positions.front();     
 
     //left
     Pos next = actual + Left; 
     if (pos_ok(next) && visited[next.i][next.j] == '0' && can_move(next)) {
       Cell c = cell(next);
+      path[next.i][next.j] = actual;
       if (c.bonus != NoBonus || c.weapon != NoWeapon ) {
         found = true;
         dist = next_dist;
-        move(id, Left);
+        create_path(id, next, path);
       }
       
       positions.push(next);
@@ -73,10 +107,12 @@ struct PLAYER_NAME : public Player {
       next = actual + Right; 
       if (pos_ok(next) && visited[next.i][next.j] == '0' && can_move(next)) {
       Cell c = cell(next);
+      path[next.i][next.j] = actual;
+
       if (c.bonus != NoBonus || c.weapon != NoWeapon) {
         found = true;
         dist = next_dist;
-        move(id, Right);
+        create_path(id, next, path);
       }
       positions.push(next);
       distance.push(next_dist);
@@ -88,10 +124,13 @@ struct PLAYER_NAME : public Player {
     next = actual + Up;
     if (pos_ok(next) && visited[next.i][next.j] == '0' && can_move(next)) {
       Cell c = cell(next);
+      path[next.i][next.j] = actual;
+
       if (c.bonus != NoBonus || c.weapon != NoWeapon) {
         found = true;
         dist = next_dist;
-        move(id, Up);
+        create_path(id, next, path);
+
       }
 
       positions.push(next);
@@ -104,10 +143,11 @@ struct PLAYER_NAME : public Player {
     next = actual + Down;
     if ( pos_ok(next) && visited[next.i][next.j] == '0' && can_move(next)) {
       Cell c = cell(next);
+      path[next.i][next.j] = actual;
       if (c.bonus != NoBonus || c.weapon != NoWeapon) {
         found = true;
         dist = next_dist;
-        move(id, Down);
+        create_path(id, next, path);
       }
 
       positions.push(next);
@@ -118,12 +158,13 @@ struct PLAYER_NAME : public Player {
     positions.pop();
     distance.pop();
   }
-
   return dist;
+
   }
    
 
-  virtual void play () {        
+  virtual void play () {
+
       for (int b: builders(me())) {
         Citizen c = citizen(b);
         bfs(b, c.pos);
