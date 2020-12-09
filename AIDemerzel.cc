@@ -26,7 +26,8 @@ struct PLAYER_NAME : public Player {
     if  (pos_ok(a) && cell(a).type == Street && ((cell(a).b_owner == -1) || cell(a).b_owner == me())) return true;
     else return false;
   
-  }  
+  }   
+
 
   bool win(int yo, Cell rival) {
     
@@ -36,7 +37,7 @@ struct PLAYER_NAME : public Player {
         Citizen me = citizen(yo);
 
         if (me.type == Warrior) {
-          if (riv.type == Builder || riv.weapon < me.weapon || (riv.weapon == me.weapon && riv.life < me.life)) return true;
+          if (riv.type == Builder || riv.weapon < me.weapon || (riv.weapon == m e.weapon && riv.life < me.life && is_night())) return true;
           return false;
         }
       }
@@ -105,7 +106,7 @@ struct PLAYER_NAME : public Player {
 
       for (Dir d: dirs) {
         Pos next = actual + d;   
-        if (can_move(next) && !visited[next.i][next.j]) {<< < < 
+        if (can_move(next) && !visited[next.i][next.j]) {
           path[next.i][next.j] = actual;
           if (interesting_position(next, id)) {
             found = true;
